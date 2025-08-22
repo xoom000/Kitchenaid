@@ -510,18 +510,40 @@
             return num.toFixed(1);
         }
 
-        function createUnitOptions() {
-            let options = '<optgroup label="Volume">';
-            const volumeUnits = ['cups', 'fluid ounces', 'tablespoons', 'teaspoons', 'quarts', 'gallons', 'pints', 'milliliters', 'liters'];
-            volumeUnits.forEach(unit => {
-                options += `<option value="${unit}">${unitDisplayNames[unit]}</option>`;
-            });
-            options += '</optgroup><optgroup label="Weight">';
-            const weightUnits = ['pounds', 'ounces', 'grams', 'kilograms'];
-            weightUnits.forEach(unit => {
-                options += `<option value="${unit}">${unitDisplayNames[unit]}</option>`;
-            });
-            options += '</optgroup>';
+        function createUnitOptions(baseUnit = null) {
+            let options = '';
+            
+            // If baseUnit is provided, only show compatible units
+            if (baseUnit) {
+                const isVolumeBase = volumeUnits.includes(baseUnit);
+                const isWeightBase = weightUnits.includes(baseUnit);
+                
+                if (isVolumeBase) {
+                    options = '<optgroup label="Volume">';
+                    volumeUnits.forEach(unit => {
+                        options += `<option value="${unit}">${unitDisplayNames[unit]}</option>`;
+                    });
+                    options += '</optgroup>';
+                } else if (isWeightBase) {
+                    options = '<optgroup label="Weight">';
+                    weightUnits.forEach(unit => {
+                        options += `<option value="${unit}">${unitDisplayNames[unit]}</option>`;
+                    });
+                    options += '</optgroup>';
+                }
+            } else {
+                // Show all options (for modal)
+                options = '<optgroup label="Volume">';
+                volumeUnits.forEach(unit => {
+                    options += `<option value="${unit}">${unitDisplayNames[unit]}</option>`;
+                });
+                options += '</optgroup><optgroup label="Weight">';
+                weightUnits.forEach(unit => {
+                    options += `<option value="${unit}">${unitDisplayNames[unit]}</option>`;
+                });
+                options += '</optgroup>';
+            }
+            
             return options;
         }
 
@@ -603,7 +625,7 @@
                     <select id="display-unit-${ingredientCount}" 
                             class="unit-select"
                             onchange="calculateTotal(${ingredientCount})">
-                        ${createUnitOptions()}
+                        ${createUnitOptions(unit)}
                     </select>
                 </td>
                 <td class="total-column" id="total-${ingredientCount}">
@@ -749,7 +771,7 @@
                             <select id="display-unit-${rowId}" 
                                     class="unit-select"
                                     onchange="calculateTotal(${rowId})">
-                                ${createUnitOptions()}
+                                ${createUnitOptions(ingredient.unit)}
                             </select>
                         </td>
                         <td class="total-column" id="total-${rowId}">
