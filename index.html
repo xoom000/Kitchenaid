@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chef's Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/convert@5/dist/index.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-header {
+            height: 15vh;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            color: white;
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .student-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .student-controls label {
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .student-controls input {
+            font-size: 16px;
+            padding: 6px 12px;
+            width: 80px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.95);
+            color: #2c3e50;
+        }
+
+        .add-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .add-btn:hover {
+            background: #229954;
+        }
+
+        .info-bar {
+            background: white;
+            padding: 12px 20px;
+            border-bottom: 1px solid #e8eaed;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .print-btn {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .print-btn:hover {
+            background: #1a252f;
+        }
+
+        .app-main {
+            height: calc(85vh - 60px);
+            background: #fafbfc;
+            overflow: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: #2c3e50;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e8eaed;
+            vertical-align: middle;
+            height: 60px;
+        }
+
+        .ingredient-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #2c3e50;
+            line-height: 1.3;
+        }
+
+        .base-portion-display {
+            background: #f8f9fa;
+            border: 1px solid #e8eaed;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        .unit-select {
+            width: 100%;
+            height: 40px;
+            padding: 8px 12px;
+            border: 1px solid #e8eaed;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .unit-select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .remove-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .remove-btn:hover {
+            background: #c0392b;
+        }
+
+        .total-column {
+            background: #f8f9fa;
+            font-weight: 700;
+            text-align: center;
+            font-size: 15px;
+            color: #2c3e50;
+            padding: 12px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 10% auto;
+            padding: 24px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 20px;
+        }
+
+        .modal-form-group {
+            margin-bottom: 16px;
+        }
+
+        .modal-form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .modal-input {
+            width: 100%;
+            height: 40px;
+            padding: 8px 12px;
+            border: 1px solid #e8eaed;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .modal-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-row .modal-input {
+            flex: 1;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .modal-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            flex: 1;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .modal-btn.save {
+            background: #3498db;
+            color: white;
+        }
+
+        .modal-btn.save:hover {
+            background: #2980b9;
+        }
+
+        .modal-btn.cancel {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .modal-btn.cancel:hover {
+            background: #7f8c8d;
+        }
+
+        /* Column widths */
+        th:nth-child(1), td:nth-child(1) { width: 40%; }
+        th:nth-child(2), td:nth-child(2) { width: 22%; }
+        th:nth-child(3), td:nth-child(3) { width: 16%; }
+        th:nth-child(4), td:nth-child(4) { width: 16%; }
+        th:nth-child(5), td:nth-child(5) { width: 6%; }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-title">Chef's Calculator</div>
+        <div class="header-controls">
+            <div class="student-controls">
+                <label for="studentCount">Students</label>
+                <input type="number" id="studentCount" min="1" value="250">
+            </div>
+            <button class="add-btn" onclick="openAddIngredientModal()">+ Add Ingredient</button>
+        </div>
+    </header>
+
+    <div class="info-bar">
+        <div id="currentDateTime"></div>
+        <button class="print-btn" onclick="window.print()">Print</button>
+    </div>
+
+    <main class="app-main">
+        <table id="ingredientTable">
+            <thead>
+                <tr>
+                    <th>Ingredient</th>
+                    <th>Base Portion</th>
+                    <th>Display As</th>
+                    <th>Total Needed</th>
+                    <th>Remove</th>
+                </tr>
+            </thead>
+            <tbody id="ingredientTableBody">
+                <tr class="empty-state">
+                    <td colspan="5">
+                        <h3>No ingredients added yet</h3>
+                        <p>Click "Add Ingredient" to get started</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </main>
+
+    <!-- Add Ingredient Modal -->
+    <div id="addIngredientModal" class="modal">
+        <div class="modal-content">
+            <h3>Add Ingredient</h3>
+            <div class="modal-form-group">
+                <label for="modalIngredientName">Ingredient Name:</label>
+                <input type="text" id="modalIngredientName" class="modal-input" placeholder="e.g., Mediterranean Quinoa Salad">
+            </div>
+            <div class="modal-form-group">
+                <label>Base Portion Amount:</label>
+                <div class="modal-row">
+                    <input type="number" id="modalAmount" class="modal-input" step="0.01" placeholder="4" min="0.01">
+                    <select id="modalUnit" class="modal-input">
+                        <optgroup label="Volume">
+                            <option value="cups">Cups</option>
+                            <option value="fluid ounces">Fluid Ounces</option>
+                            <option value="tablespoons">Tablespoons</option>
+                            <option value="teaspoons">Teaspoons</option>
+                            <option value="quarts">Quarts</option>
+                            <option value="gallons">Gallons</option>
+                            <option value="pints">Pints</option>
+                            <option value="milliliters">Milliliters</option>
+                            <option value="liters">Liters</option>
+                        </optgroup>
+                        <optgroup label="Weight">
+                            <option value="pounds">Pounds</option>
+                            <option value="ounces">Ounces</option>
+                            <option value="grams">Grams</option>
+                            <option value="kilograms">Kilograms</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn save" onclick="addIngredient()">Add Ingredient</button>
+                <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const volumeUnits = ['cups', 'fluid ounces', 'tablespoons', 'teaspoons', 'quarts', 'gallons', 'pints', 'milliliters', 'liters'];
+        const weightUnits = ['pounds', 'ounces', 'grams', 'kilograms'];
+
+        const unitDisplayNames = {
+            'cups': 'Cups',
+            'fluid ounces': 'Fluid Ounces', 
+            'tablespoons': 'Tablespoons',
+            'teaspoons': 'Teaspoons',
+            'quarts': 'Quarts',
+            'gallons': 'Gallons',
+            'pints': 'Pints',
+            'milliliters': 'Milliliters',
+            'liters': 'Liters',
+            'pounds': 'Pounds',
+            'ounces': 'Ounces',
+            'grams': 'Grams',
+            'kilograms': 'Kilograms'
+        };
+
+        // Application state
+        let ingredientCount = 0;
+        let ingredients = {};
+
+        // Unit mapping for Convert.js library
+        const convertJsUnits = {
+            'cups': 'cup',
+            'fluid ounces': 'fluidounce',
+            'tablespoons': 'tablespoon',
+            'teaspoons': 'teaspoon',
+            'quarts': 'quart',
+            'gallons': 'gallon',
+            'pints': 'pint',
+            'milliliters': 'milliliter',
+            'liters': 'liter',
+            'pounds': 'pound',
+            'ounces': 'ounce',
+            'grams': 'gram',
+            'kilograms': 'kilogram'
+        };
+
+        // Enhanced conversion using Convert.js library
+        function convertUnit(amount, fromUnit, toUnit) {
+            if (fromUnit === toUnit) return amount;
+            
+            try {
+                const fromConvertUnit = convertJsUnits[fromUnit];
+                const toConvertUnit = convertJsUnits[toUnit];
+                
+                if (!fromConvertUnit || !toConvertUnit) {
+                    return null;
+                }
+                
+                // Use Convert.js library for conversion
+                return convert(amount).from(fromConvertUnit).to(toConvertUnit);
+            } catch (error) {
+                // Incompatible conversion (volume↔weight) - return null
+                console.warn(`Cannot convert ${fromUnit} to ${toUnit}:`, error);
+                return null;
+            }
+        }
+
+        function formatNumber(num) {
+            if (num < 0.01) return num.toFixed(4);
+            if (num < 1) return num.toFixed(3);
+            if (num < 10) return num.toFixed(2);
+            return num.toFixed(1);
+        }
+
+        function createUnitOptions() {
+            let options = '<optgroup label="Volume">';
+            const volumeUnits = ['cups', 'fluid ounces', 'tablespoons', 'teaspoons', 'quarts', 'gallons', 'pints', 'milliliters', 'liters'];
+            volumeUnits.forEach(unit => {
+                options += `<option value="${unit}">${unitDisplayNames[unit]}</option>`;
+            });
+            options += '</optgroup><optgroup label="Weight">';
+            const weightUnits = ['pounds', 'ounces', 'grams', 'kilograms'];
+            weightUnits.forEach(unit => {
+                options += `<option value="${unit}">${unitDisplayNames[unit]}</option>`;
+            });
+            options += '</optgroup>';
+            return options;
+        }
+
+        function removeEmptyState() {
+            const emptyState = document.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+        }
+
+        function showEmptyState() {
+            const tbody = document.getElementById('ingredientTableBody');
+            if (tbody.children.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.className = 'empty-state';
+                emptyRow.innerHTML = `
+                    <td colspan="5">
+                        <h3>No ingredients added yet</h3>
+                        <p>Click "Add Ingredient" to get started</p>
+                    </td>
+                `;
+                tbody.appendChild(emptyRow);
+            }
+        }
+
+        // Main functions
+        function openAddIngredientModal() {
+            document.getElementById('modalIngredientName').value = '';
+            document.getElementById('modalAmount').value = '';
+            document.getElementById('modalUnit').value = 'cups';
+            document.getElementById('addIngredientModal').style.display = 'block';
+            
+            // Focus on ingredient name input
+            setTimeout(() => {
+                document.getElementById('modalIngredientName').focus();
+            }, 100);
+        }
+
+        function addIngredient() {
+            const ingredientName = document.getElementById('modalIngredientName').value.trim();
+            const amountInput = document.getElementById('modalAmount').value.trim();
+            const amount = parseFloat(amountInput);
+            const unit = document.getElementById('modalUnit').value;
+            
+            if (!ingredientName) {
+                alert('Please enter an ingredient name');
+                return;
+            }
+            
+            if (!amountInput || isNaN(amount) || amount <= 0) {
+                alert('Please enter a valid amount greater than 0');
+                return;
+            }
+            
+            removeEmptyState();
+            
+            ingredientCount++;
+            const tbody = document.getElementById('ingredientTableBody');
+            const row = document.createElement('tr');
+            row.id = `row-${ingredientCount}`;
+            
+            // Store ingredient data
+            ingredients[ingredientCount] = {
+                name: ingredientName,
+                amount: amount,
+                unit: unit
+            };
+            
+            row.innerHTML = `
+                <td>
+                    <div class="ingredient-name">${ingredientName}</div>
+                </td>
+                <td>
+                    <div class="base-portion-display" id="base-portion-${ingredientCount}">
+                        ${formatNumber(amount)} ${unit}
+                    </div>
+                </td>
+                <td>
+                    <select id="display-unit-${ingredientCount}" 
+                            class="unit-select"
+                            onchange="calculateTotal(${ingredientCount})">
+                        ${createUnitOptions()}
+                    </select>
+                </td>
+                <td class="total-column" id="total-${ingredientCount}">
+                    -
+                </td>
+                <td style="text-align: center;">
+                    <button class="remove-btn" onclick="removeIngredientRow(${ingredientCount})">×</button>
+                </td>
+            `;
+            
+            tbody.appendChild(row);
+            
+            // Set the display unit to match the base unit
+            document.getElementById(`display-unit-${ingredientCount}`).value = unit;
+            
+            // Calculate initial total
+            setTimeout(() => {
+                calculateTotal(ingredientCount);
+            }, 10);
+            closeModal();
+        }
+
+        function removeIngredientRow(rowId) {
+            const row = document.getElementById(`row-${rowId}`);
+            if (row) {
+                row.remove();
+                delete ingredients[rowId];
+                
+                // Show empty state if no rows left
+                const tbody = document.getElementById('ingredientTableBody');
+                if (tbody.children.length === 0) {
+                    showEmptyState();
+                }
+            }
+        }
+
+        function calculateTotal(rowId) {
+            const studentCount = parseInt(document.getElementById('studentCount').value) || 0;
+            const ingredient = ingredients[rowId];
+            const displayUnitElement = document.getElementById(`display-unit-${rowId}`);
+            const totalCell = document.getElementById(`total-${rowId}`);
+            const basePortionCell = document.getElementById(`base-portion-${rowId}`);
+            
+            if (!ingredient || !displayUnitElement || !totalCell || !basePortionCell) return;
+            
+            const displayUnit = displayUnitElement.value;
+            
+            // Update base portion display
+            let baseDisplayAmount = ingredient.amount;
+            let baseDisplayUnit = ingredient.unit;
+            
+            // Try to convert base portion for display if units are compatible
+            if (displayUnit !== ingredient.unit) {
+                const converted = convertUnit(ingredient.amount, ingredient.unit, displayUnit);
+                if (converted !== null) {
+                    baseDisplayAmount = converted;
+                    baseDisplayUnit = displayUnit;
+                }
+                // If conversion fails (volume to weight), keep original units
+            }
+            
+            basePortionCell.innerHTML = `${formatNumber(baseDisplayAmount)} ${unitDisplayNames[baseDisplayUnit]}`;
+            
+            // Calculate total needed
+            if (studentCount > 0) {
+                // Calculate total in original units first
+                const totalInOriginalUnits = ingredient.amount * studentCount;
+                
+                // Try to convert to display unit if compatible
+                let finalTotal = totalInOriginalUnits;
+                let finalUnit = ingredient.unit;
+                
+                if (displayUnit !== ingredient.unit) {
+                    const converted = convertUnit(totalInOriginalUnits, ingredient.unit, displayUnit);
+                    if (converted !== null) {
+                        finalTotal = converted;
+                        finalUnit = displayUnit;
+                    }
+                    // If conversion fails, keep original units
+                }
+                
+                totalCell.textContent = `${formatNumber(finalTotal)} ${unitDisplayNames[finalUnit]}`;
+            } else {
+                totalCell.textContent = '-';
+            }
+        }
+
+        function calculateAllTotals() {
+            Object.keys(ingredients).forEach(rowId => {
+                calculateTotal(parseInt(rowId));
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('addIngredientModal').style.display = 'none';
+        }
+
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit', 
+                minute: '2-digit'
+            };
+            const dateTimeElement = document.getElementById('currentDateTime');
+            if (dateTimeElement) {
+                dateTimeElement.textContent = now.toLocaleDateString('en-US', options);
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const studentCountInput = document.getElementById('studentCount');
+            if (studentCountInput) {
+                studentCountInput.addEventListener('input', calculateAllTotals);
+            }
+
+            // Modal close on outside click
+            window.onclick = function(event) {
+                const modal = document.getElementById('addIngredientModal');
+                if (event.target === modal) {
+                    closeModal();
+                }
+            };
+
+            // Modal keyboard shortcuts
+            document.addEventListener('keydown', function(event) {
+                const modal = document.getElementById('addIngredientModal');
+                if (modal.style.display === 'block') {
+                    if (event.key === 'Escape') {
+                        closeModal();
+                    } else if (event.key === 'Enter' && (event.target.id === 'modalIngredientName' || event.target.id === 'modalAmount')) {
+                        addIngredient();
+                    }
+                }
+            });
+
+            // Initialize
+            updateDateTime();
+            setInterval(updateDateTime, 60000);
+        });
+    </script>
+</body>
+</html>
