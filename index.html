@@ -553,6 +553,21 @@
             return num.toFixed(1);
         }
 
+        function formatWeight(amount, unit) {
+            // Convert large ounce amounts to pounds:ounces format
+            if (unit === 'ounces' && amount >= 16) {
+                const pounds = Math.floor(amount / 16);
+                const remainingOunces = amount % 16;
+                
+                if (remainingOunces === 0) {
+                    return `${pounds} lbs`;
+                } else {
+                    return `${pounds} lbs ${formatNumber(remainingOunces)} oz`;
+                }
+            }
+            return `${formatNumber(amount)} ${unitDisplayNames[unit]}`;
+        }
+
         // Ingredient density database (grams per cup)
         const ingredientDensities = {
             'water': 236.59,
@@ -753,7 +768,7 @@
                     // If conversion fails, keep original units
                 }
                 
-                totalCell.textContent = `${formatNumber(finalTotal)} ${unitDisplayNames[finalUnit]}`;
+                totalCell.textContent = formatWeight(finalTotal, finalUnit);
             } else {
                 totalCell.textContent = '-';
             }
