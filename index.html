@@ -425,6 +425,45 @@
         // Application state
         let ingredientCount = 0;
         let ingredients = {};
+        const STORAGE_KEY = 'chefs-calculator-data';
+
+        // localStorage functions
+        function saveToLocalStorage() {
+            const studentCount = parseInt(document.getElementById('studentCount').value) || 250;
+            const data = {
+                ingredientCount: ingredientCount,
+                ingredients: ingredients,
+                studentCount: studentCount
+            };
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (error) {
+                console.warn('Failed to save to localStorage:', error);
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    ingredientCount = parsed.ingredientCount || 0;
+                    ingredients = parsed.ingredients || {};
+                    
+                    // Restore student count
+                    if (parsed.studentCount) {
+                        const studentInput = document.getElementById('studentCount');
+                        if (studentInput) {
+                            studentInput.value = parsed.studentCount;
+                        }
+                    }
+                    return true;
+                }
+            } catch (error) {
+                console.warn('Failed to load from localStorage:', error);
+            }
+            return false;
+        }
 
         // Unit mapping for Convert.js library
         const convertJsUnits = {
@@ -584,6 +623,9 @@
             setTimeout(() => {
                 calculateTotal(ingredientCount);
             }, 10);
+            
+            // Save to localStorage
+            saveToLocalStorage();
             closeModal();
         }
 
@@ -598,6 +640,9 @@
                 if (tbody.children.length === 0) {
                     showEmptyState();
                 }
+                
+                // Save to localStorage
+                saveToLocalStorage();
             }
         }
 
@@ -656,6 +701,8 @@
             Object.keys(ingredients).forEach(rowId => {
                 calculateTotal(parseInt(rowId));
             });
+            // Save student count change
+            saveToLocalStorage();
         }
 
         function closeModal() {
@@ -678,12 +725,63 @@
             }
         }
 
+        function restoreIngredientsFromStorage() {
+            if (loadFromLocalStorage()) {
+                const tbody = document.getElementById('ingredientTableBody');
+                removeEmptyState();
+                
+                // Rebuild table from stored ingredients
+                Object.keys(ingredients).forEach(rowId => {
+                    const ingredient = ingredients[rowId];
+                    const row = document.createElement('tr');
+                    row.id = `row-${rowId}`;
+                    
+                    row.innerHTML = `
+                        <td>
+                            <div class="ingredient-name">${ingredient.name}</div>
+                        </td>
+                        <td>
+                            <div class="base-portion-display" id="base-portion-${rowId}">
+                                ${formatNumber(ingredient.amount)} ${ingredient.unit}
+                            </div>
+                        </td>
+                        <td>
+                            <select id="display-unit-${rowId}" 
+                                    class="unit-select"
+                                    onchange="calculateTotal(${rowId})">
+                                ${createUnitOptions()}
+                            </select>
+                        </td>
+                        <td class="total-column" id="total-${rowId}">
+                            -
+                        </td>
+                        <td style="text-align: center;">
+                            <button class="remove-btn" onclick="removeIngredientRow(${rowId})">×</button>
+                        </td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                    
+                    // Set the display unit to match the base unit
+                    document.getElementById(`display-unit-${rowId}`).value = ingredient.unit;
+                    
+                    // Calculate total
+                    setTimeout(() => {
+                        calculateTotal(parseInt(rowId));
+                    }, 10);
+                });
+            }
+        }
+
         // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
             const studentCountInput = document.getElementById('studentCount');
             if (studentCountInput) {
                 studentCountInput.addEventListener('input', calculateAllTotals);
             }
+            
+            // Restore ingredients from localStorage
+            restoreIngredientsFromStorage();
 
             // Modal close on outside click
             window.onclick = function(event) {
