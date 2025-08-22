@@ -482,25 +482,89 @@
             'kilograms': 'kilogram'
         };
 
-        // Enhanced conversion using Convert.js library
-        function convertUnit(amount, fromUnit, toUnit) {
+        // Smart conversion function that handles ALL cooking conversions
+        function convertUnit(amount, fromUnit, toUnit, ingredientName = '') {
             if (fromUnit === toUnit) return amount;
             
+            const fromIsVolume = volumeUnits.includes(fromUnit);
+            const toIsVolume = volumeUnits.includes(toUnit);
+            const fromIsWeight = weightUnits.includes(fromUnit);
+            const toIsWeight = weightUnits.includes(toUnit);
+            
             try {
-                const fromConvertUnit = convertJsUnits[fromUnit];
-                const toConvertUnit = convertJsUnits[toUnit];
-                
-                if (!fromConvertUnit || !toConvertUnit) {
-                    return null;
+                // Same type conversion (volume→volume or weight→weight)
+                if ((fromIsVolume && toIsVolume) || (fromIsWeight && toIsWeight)) {
+                    const fromConvertUnit = convertJsUnits[fromUnit];
+                    const toConvertUnit = convertJsUnits[toUnit];
+                    
+                    if (fromConvertUnit && toConvertUnit) {
+                        return convert(amount).from(fromConvertUnit).to(toConvertUnit);
+                    }
                 }
                 
-                // Use Convert.js library for conversion
-                return convert(amount).from(fromConvertUnit).to(toConvertUnit);
+                // Volume to Weight conversion
+                if (fromIsVolume && toIsWeight) {
+                    // First convert to cups
+                    let cups = amount;
+                    if (fromUnit !== 'cups') {
+                        cups = convert(amount).from(convertJsUnits[fromUnit]).to('cup');
+                    }
+                    
+                    // Get ingredient density (grams per cup)
+                    let density = ingredientDensities.default;
+                    const ingredientKey = ingredientName.toLowerCase();
+                    for (const key in ingredientDensities) {
+                        if (ingredientKey.includes(key)) {
+                            density = ingredientDensities[key];
+                            break;
+                        }
+                    }
+                    
+                    // Convert cups to grams using density
+                    const grams = cups * density;
+                    
+                    // Convert grams to target weight unit
+                    if (toUnit === 'grams') {
+                        return grams;
+                    } else {
+                        return convert(grams).from('gram').to(convertJsUnits[toUnit]);
+                    }
+                }
+                
+                // Weight to Volume conversion  
+                if (fromIsWeight && toIsVolume) {
+                    // First convert to grams
+                    let grams = amount;
+                    if (fromUnit !== 'grams') {
+                        grams = convert(amount).from(convertJsUnits[fromUnit]).to('gram');
+                    }
+                    
+                    // Get ingredient density
+                    let density = ingredientDensities.default;
+                    const ingredientKey = ingredientName.toLowerCase();
+                    for (const key in ingredientDensities) {
+                        if (ingredientKey.includes(key)) {
+                            density = ingredientDensities[key];
+                            break;
+                        }
+                    }
+                    
+                    // Convert grams to cups using density
+                    const cups = grams / density;
+                    
+                    // Convert cups to target volume unit
+                    if (toUnit === 'cups') {
+                        return cups;
+                    } else {
+                        return convert(cups).from('cup').to(convertJsUnits[toUnit]);
+                    }
+                }
+                
             } catch (error) {
-                // Incompatible conversion (volume↔weight) - return null
-                console.warn(`Cannot convert ${fromUnit} to ${toUnit}:`, error);
-                return null;
+                console.warn(`Conversion error ${fromUnit} to ${toUnit}:`, error);
             }
+            
+            return null;
         }
 
         function formatNumber(num) {
@@ -510,40 +574,37 @@
             return num.toFixed(1);
         }
 
-        function createUnitOptions(baseUnit = null) {
-            let options = '';
-            
-            // If baseUnit is provided, only show compatible units
-            if (baseUnit) {
-                const isVolumeBase = volumeUnits.includes(baseUnit);
-                const isWeightBase = weightUnits.includes(baseUnit);
-                
-                if (isVolumeBase) {
-                    options = '<optgroup label="Volume">';
-                    volumeUnits.forEach(unit => {
-                        options += `<option value="${unit}">${unitDisplayNames[unit]}</option>`;
-                    });
-                    options += '</optgroup>';
-                } else if (isWeightBase) {
-                    options = '<optgroup label="Weight">';
-                    weightUnits.forEach(unit => {
-                        options += `<option value="${unit}">${unitDisplayNames[unit]}</option>`;
-                    });
-                    options += '</optgroup>';
-                }
-            } else {
-                // Show all options (for modal)
-                options = '<optgroup label="Volume">';
-                volumeUnits.forEach(unit => {
-                    options += `<option value="${unit}">${unitDisplayNames[unit]}</option>`;
-                });
-                options += '</optgroup><optgroup label="Weight">';
-                weightUnits.forEach(unit => {
-                    options += `<option value="${unit}">${unitDisplayNames[unit]}</option>`;
-                });
-                options += '</optgroup>';
-            }
-            
+        // Ingredient density database (grams per cup)
+        const ingredientDensities = {
+            'water': 236.59,
+            'milk': 244,
+            'flour': 120,
+            'sugar': 200,
+            'brown sugar': 220,
+            'butter': 227,
+            'oil': 218,
+            'honey': 340,
+            'rice': 185,
+            'beans': 180,
+            'oats': 80,
+            'salt': 292,
+            'baking powder': 120,
+            'cocoa powder': 75,
+            'vanilla': 208,
+            'default': 200  // Generic density for unknown ingredients
+        };
+
+        function createUnitOptions() {
+            // Always show ALL units - let the conversion logic handle it
+            let options = '<optgroup label="Volume">';
+            volumeUnits.forEach(unit => {
+                options += `<option value="${unit}">${unitDisplayNames[unit]}</option>`;
+            });
+            options += '</optgroup><optgroup label="Weight">';
+            weightUnits.forEach(unit => {
+                options += `<option value="${unit}">${unitDisplayNames[unit]}</option>`;
+            });
+            options += '</optgroup>';
             return options;
         }
 
@@ -625,7 +686,7 @@
                     <select id="display-unit-${ingredientCount}" 
                             class="unit-select"
                             onchange="calculateTotal(${ingredientCount})">
-                        ${createUnitOptions(unit)}
+                        ${createUnitOptions()}
                     </select>
                 </td>
                 <td class="total-column" id="total-${ingredientCount}">
@@ -685,12 +746,12 @@
             
             // Try to convert base portion for display if units are compatible
             if (displayUnit !== ingredient.unit) {
-                const converted = convertUnit(ingredient.amount, ingredient.unit, displayUnit);
+                const converted = convertUnit(ingredient.amount, ingredient.unit, displayUnit, ingredient.name);
                 if (converted !== null) {
                     baseDisplayAmount = converted;
                     baseDisplayUnit = displayUnit;
                 }
-                // If conversion fails (volume to weight), keep original units
+                // If conversion fails, keep original units
             }
             
             basePortionCell.innerHTML = `${formatNumber(baseDisplayAmount)} ${unitDisplayNames[baseDisplayUnit]}`;
@@ -705,7 +766,7 @@
                 let finalUnit = ingredient.unit;
                 
                 if (displayUnit !== ingredient.unit) {
-                    const converted = convertUnit(totalInOriginalUnits, ingredient.unit, displayUnit);
+                    const converted = convertUnit(totalInOriginalUnits, ingredient.unit, displayUnit, ingredient.name);
                     if (converted !== null) {
                         finalTotal = converted;
                         finalUnit = displayUnit;
@@ -771,7 +832,7 @@
                             <select id="display-unit-${rowId}" 
                                     class="unit-select"
                                     onchange="calculateTotal(${rowId})">
-                                ${createUnitOptions(ingredient.unit)}
+                                ${createUnitOptions()}
                             </select>
                         </td>
                         <td class="total-column" id="total-${rowId}">
