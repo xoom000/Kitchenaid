@@ -321,6 +321,128 @@
             margin-bottom: 8px;
             color: #2c3e50;
         }
+
+        /* Print-specific styles for clean kitchen printouts */
+        @media print {
+            body {
+                background: white !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+
+            /* Hide all UI elements - only show the essential data */
+            .header-controls,
+            .info-bar button,
+            .remove-btn,
+            .modal,
+            .add-btn {
+                display: none !important;
+            }
+
+            /* Clean header for print */
+            .app-header {
+                background: #2c3e50 !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+                height: auto !important;
+                padding: 20px !important;
+                page-break-inside: avoid;
+            }
+
+            .app-title {
+                font-size: 28px !important;
+                text-align: center;
+            }
+
+            /* Show student count in header */
+            .app-header::after {
+                content: "Students: " attr(data-students) !important;
+                display: block;
+                font-size: 18px;
+                margin-top: 10px;
+                text-align: center;
+            }
+
+            /* Clean info bar */
+            .info-bar {
+                border: none !important;
+                padding: 10px 20px !important;
+                text-align: center;
+                font-weight: 600;
+            }
+
+            /* Remove column widths, let table auto-size */
+            th, td {
+                width: auto !important;
+            }
+
+            /* Hide remove column entirely */
+            th:nth-child(5), td:nth-child(5) {
+                display: none !important;
+            }
+
+            /* Make table more readable */
+            table {
+                width: 100% !important;
+                margin-top: 20px;
+            }
+
+            th {
+                background: #2c3e50 !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+                color: white !important;
+                font-size: 14px !important;
+                padding: 15px 10px !important;
+            }
+
+            td {
+                padding: 12px 10px !important;
+                font-size: 14px !important;
+                border-bottom: 1px solid #ddd !important;
+            }
+
+            .ingredient-name {
+                font-weight: 600 !important;
+                font-size: 16px !important;
+            }
+
+            .base-portion-display {
+                background: #f8f9fa !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+
+            .total-column {
+                background: #f0f8ff !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+                font-weight: 700 !important;
+                font-size: 16px !important;
+            }
+
+            /* Hide display unit dropdowns - show as text */
+            select {
+                border: none !important;
+                background: transparent !important;
+                font-weight: 600 !important;
+            }
+
+            /* Add page break protection */
+            .app-main {
+                page-break-inside: avoid;
+                height: auto !important;
+                overflow: visible !important;
+            }
+
+            /* Footer space for notes */
+            body::after {
+                content: " ";
+                display: block;
+                height: 100px;
+                page-break-inside: avoid;
+            }
+        }
     </style>
 </head>
 <body>
@@ -780,6 +902,16 @@
             });
             // Save student count change
             saveToLocalStorage();
+            // Update header for print
+            updatePrintHeader();
+        }
+
+        function updatePrintHeader() {
+            const studentCount = document.getElementById('studentCount').value;
+            const header = document.querySelector('.app-header');
+            if (header) {
+                header.setAttribute('data-students', studentCount);
+            }
         }
 
         function closeModal() {
@@ -883,6 +1015,7 @@
             // Initialize
             updateDateTime();
             setInterval(updateDateTime, 60000);
+            updatePrintHeader();
         });
     </script>
 </body>
