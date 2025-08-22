@@ -482,7 +482,7 @@
             'kilograms': 'kilogram'
         };
 
-        // Smart conversion function that handles ALL cooking conversions
+        // Kitchen-style conversion function - portion equivalents, not density science
         function convertUnit(amount, fromUnit, toUnit, ingredientName = '') {
             if (fromUnit === toUnit) return amount;
             
@@ -492,7 +492,7 @@
             const toIsWeight = weightUnits.includes(toUnit);
             
             try {
-                // Same type conversion (volume→volume or weight→weight)
+                // Same type conversion (volume→volume or weight→weight)  
                 if ((fromIsVolume && toIsVolume) || (fromIsWeight && toIsWeight)) {
                     const fromConvertUnit = convertJsUnits[fromUnit];
                     const toConvertUnit = convertJsUnits[toUnit];
@@ -502,61 +502,40 @@
                     }
                 }
                 
-                // Volume to Weight conversion
+                // Volume to Weight: Use simple portion equivalency
+                // 1 cup = 8 fl oz, 1 pound = 16 oz, so 1 cup = 0.5 pounds by volume
                 if (fromIsVolume && toIsWeight) {
-                    // First convert to cups
-                    let cups = amount;
-                    if (fromUnit !== 'cups') {
-                        cups = convert(amount).from(convertJsUnits[fromUnit]).to('cup');
+                    // Convert to fluid ounces first
+                    let fluidOunces = amount;
+                    if (fromUnit !== 'fluid ounces') {
+                        fluidOunces = convert(amount).from(convertJsUnits[fromUnit]).to('fluidounce');
                     }
                     
-                    // Get ingredient density (grams per cup)
-                    let density = ingredientDensities.default;
-                    const ingredientKey = ingredientName.toLowerCase();
-                    for (const key in ingredientDensities) {
-                        if (ingredientKey.includes(key)) {
-                            density = ingredientDensities[key];
-                            break;
-                        }
-                    }
-                    
-                    // Convert cups to grams using density
-                    const grams = cups * density;
-                    
-                    // Convert grams to target weight unit
-                    if (toUnit === 'grams') {
-                        return grams;
+                    // Simple kitchen conversion: treat fluid ounces as weight ounces for portioning
+                    if (toUnit === 'ounces') {
+                        return fluidOunces;  // 8 fl oz → 8 oz portion
+                    } else if (toUnit === 'pounds') {
+                        return fluidOunces / 16;  // 8 fl oz → 0.5 lbs
                     } else {
-                        return convert(grams).from('gram').to(convertJsUnits[toUnit]);
+                        // Convert through ounces to other weight units
+                        return convert(fluidOunces).from('ounce').to(convertJsUnits[toUnit]);
                     }
                 }
                 
-                // Weight to Volume conversion  
+                // Weight to Volume: Reverse the portion equivalency
                 if (fromIsWeight && toIsVolume) {
-                    // First convert to grams
-                    let grams = amount;
-                    if (fromUnit !== 'grams') {
-                        grams = convert(amount).from(convertJsUnits[fromUnit]).to('gram');
+                    // Convert to ounces first
+                    let weightOunces = amount;
+                    if (fromUnit !== 'ounces') {
+                        weightOunces = convert(amount).from(convertJsUnits[fromUnit]).to('ounce');
                     }
                     
-                    // Get ingredient density
-                    let density = ingredientDensities.default;
-                    const ingredientKey = ingredientName.toLowerCase();
-                    for (const key in ingredientDensities) {
-                        if (ingredientKey.includes(key)) {
-                            density = ingredientDensities[key];
-                            break;
-                        }
-                    }
-                    
-                    // Convert grams to cups using density
-                    const cups = grams / density;
-                    
-                    // Convert cups to target volume unit
-                    if (toUnit === 'cups') {
-                        return cups;
+                    // Treat weight ounces as fluid ounces for portioning
+                    if (toUnit === 'fluid ounces') {
+                        return weightOunces;  // 8 oz → 8 fl oz portion  
                     } else {
-                        return convert(cups).from('cup').to(convertJsUnits[toUnit]);
+                        // Convert through fluid ounces to other volume units
+                        return convert(weightOunces).from('fluidounce').to(convertJsUnits[toUnit]);
                     }
                 }
                 
